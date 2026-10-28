@@ -33,6 +33,7 @@
 #include "memory_dump.hpp"
 
 TargetVersion	gTargetVersion = TargetVersion::Rustc1_29;
+bool g_rust_plus_plus = false;
 
 struct ProgramParams
 {
@@ -1319,6 +1320,10 @@ ProgramParams::ProgramParams(int argc, char *argv[])
                     exit(1);
                 }
             }
+			else if(!strcmp(arg, "--rust-plus-plus")) {
+				g_rust_plus_plus = true;
+				std::cout << "Compiling in Rust++ mode" << std::endl;
+			}
             else {
                 ::std::cerr << "Unknown option '" << arg << "'" << ::std::endl;
                 exit(1);
