@@ -22,6 +22,7 @@
 #include <ast/expr.hpp>
 #include <macro_rules/macro_rules.hpp>
 #include <path.h>
+#include <rust_plus_plus.hpp>
 
 template<typename T>
 Spanned<T> get_spanned(TokenStream& lex, ::std::function<T()> f) {
@@ -453,6 +454,35 @@ AST::Function::Arg Parse_Function_Arg(TokenStream& lex, bool expect_named)
     return AST::Function::Arg(mv$(pat), mv$(ty), mv$(attrs));
 }
 
+AST::Function::Arg Parse_Function_Arg_rspp(TokenStream& lex, bool expect_named)
+{
+    TRACE_FUNCTION_F("expect_named = " << expect_named);
+    Token   tok;
+
+    auto attrs = Parse_ItemAttrs(lex);
+
+    auto ty = Parse_Type(lex);
+
+    // If any of the following
+    // - Expecting a named parameter (i.e. defining a function in root or impl)
+    // - Next token is an underscore (only valid as a pattern here)
+    // - Next token is 'mut' (a mutable parameter slot) or 'ref' (ref pattern)
+    // - Next two are <ident> (a trivial named parameter)
+    // NOTE: When not expecting a named param, destructuring patterns are not allowed
+    AST::Pattern    pat;
+    if( expect_named
+      || LOOK_AHEAD(lex) == TOK_UNDERSCORE
+      || LOOK_AHEAD(lex) == TOK_RWORD_REF
+      || LOOK_AHEAD(lex) == TOK_RWORD_MUT
+      || LOOK_AHEAD(lex) == TOK_IDENT
+      )
+    {
+        pat = Parse_Pattern(lex, AllowOrPattern::No);
+    }
+
+    return AST::Function::Arg(mv$(pat), mv$(ty), mv$(attrs));
+}
+
 /// Parse a function definition (after the 'fn <name>')
 AST::Function Parse_FunctionDef(TokenStream& lex, bool allow_self, bool can_be_prototype, std::string abi, AST::Function::Flags flags)
 {
@@ -582,7 +612,7 @@ AST::Function Parse_FunctionDef(TokenStream& lex, bool allow_self, bool can_be_p
                 GET_TOK(tok, lex);
                 break;
             }
-            args.push_back( Parse_Function_Arg(lex, !can_be_prototype) );
+            args.push_back( g_rust_plus_plus ? Parse_Function_Arg_rspp(lex, !can_be_prototype) : Parse_Function_Arg(lex, !can_be_prototype) );
         } while( GET_TOK(tok, lex) == TOK_COMMA );
         CHECK_TOK(tok, TOK_PAREN_CLOSE);
     }
