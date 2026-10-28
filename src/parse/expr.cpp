@@ -17,6 +17,7 @@
 #include <iostream>
 #include "tokentree.hpp"
 #include "interpolated_fragment.hpp"
+#include <rust_plus_plus.hpp>
 
 using AST::ExprNode;
 using AST::ExprNodeP;
@@ -427,6 +428,10 @@ std::vector<AST::IfLet_Condition> Parse_IfLetChain(TokenStream& lex)
     Token   tok;
     std::vector<AST::IfLet_Condition>   conditions;
     bool had_pat = false;
+
+	if(g_rust_plus_plus)
+		GET_CHECK_TOK(tok, lex, TOK_PAREN_OPEN);
+
     do {
         if( lex.getTokenIf(TOK_RWORD_LET) ) {
             lex.getTokenIf(TOK_PIPE);
@@ -480,6 +485,9 @@ std::vector<AST::IfLet_Condition> Parse_IfLetChain(TokenStream& lex)
         }
     }
 
+	if(g_rust_plus_plus)
+		GET_CHECK_TOK(tok, lex, TOK_PAREN_CLOSE);
+
     return conditions;
 }
 
@@ -495,6 +503,9 @@ ExprNodeP Parse_ForStmt(TokenStream& lex, Ident lifetime)
     CLEAR_PARSE_FLAGS_EXPR(lex);
     Token   tok;
 
+	if(g_rust_plus_plus)
+		GET_CHECK_TOK(tok, lex, TOK_PAREN_OPEN);
+
     // Irrefutable pattern
     auto pat = Parse_Pattern(lex, AllowOrPattern::Yes);
     GET_CHECK_TOK(tok, lex, TOK_RWORD_IN);
@@ -503,6 +514,10 @@ ExprNodeP Parse_ForStmt(TokenStream& lex, Ident lifetime)
         SET_PARSE_FLAG(lex, disallow_struct_literal);
         val = Parse_Expr0(lex);
     }
+
+	if(g_rust_plus_plus)
+		GET_CHECK_TOK(tok, lex, TOK_PAREN_CLOSE);
+
     return NEWNODE( AST::ExprNode_For, lifetime, ::std::move(pat), ::std::move(val), Parse_ExprBlockNode(lex) );
 }
 /// Parse an 'if' statement
