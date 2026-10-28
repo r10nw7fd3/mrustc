@@ -32,7 +32,7 @@
 #include <debug_inner.hpp>
 #include "memory_dump.hpp"
 
-TargetVersion	gTargetVersion = TargetVersion::Rustc1_29;
+TargetVersion	gTargetVersion = TargetVersion::Rustc1_90;
 bool g_rust_plus_plus = false;
 
 struct ProgramParams
@@ -904,35 +904,6 @@ namespace {
 
 ProgramParams::ProgramParams(int argc, char *argv[])
 {
-    if( const auto* a = getenv("MRUSTC_TARGET_VER") )
-    {
-        if( strcmp(a, "1.19") == 0 ) {
-            gTargetVersion = TargetVersion::Rustc1_19;
-        }
-        else if( strcmp(a, "1.29") == 0 ) {
-            gTargetVersion = TargetVersion::Rustc1_29;
-        }
-        else if( strcmp(a, "1.39") == 0 ) {
-            gTargetVersion = TargetVersion::Rustc1_39;
-        }
-        else if( strcmp(a, "1.54") == 0 ) {
-            gTargetVersion = TargetVersion::Rustc1_54;
-        }
-        else if( strcmp(a, "1.74") == 0 ) {
-            gTargetVersion = TargetVersion::Rustc1_74;
-        }
-        else if( strcmp(a, "1.90") == 0 ) {
-            gTargetVersion = TargetVersion::Rustc1_90;
-        }
-        else {
-            ::std::cerr << "$MRUSTC_TARGET_VER set to an unknown value\n";
-            exit(1);
-        }
-    }
-    else {
-        ::std::cerr << "WARNING: $MRUSTC_TARGET_VER not set, defaulting to 1.29 mode (likely not intended)\n";
-    }
-
     if( const auto* a = getenv("MRUSTC_LIBDIR") )
     {
         this->lib_search_dirs.push_back(a);
