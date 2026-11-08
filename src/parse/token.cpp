@@ -534,6 +534,8 @@ struct EscapedString {
     case TOK_RWORD_AWAIT:   return "await";
     case TOK_RWORD_DYN:     return "dyn";
     case TOK_RWORD_TRY:     return "try";
+	// Rust++
+	case TOK_RWORD_AUTO: return "auto";
     }
     throw ParseError::BugCheck("Reached end of Token::to_str");
 }

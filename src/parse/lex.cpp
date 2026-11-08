@@ -16,6 +16,7 @@
 #include <algorithm>    // std::count
 #include <limits>       // std::numeric_limits
 #include <cctype>
+#include <rust_plus_plus.hpp>
 //#define TRACE_CHARS
 //#define TRACE_RAW_TOKENS
 
@@ -199,6 +200,8 @@ static const sRWORD RWORDS_2015[] = {
   TOKENT("where",   TOK_RWORD_WHERE),
   TOKENT("while",   TOK_RWORD_WHILE),
   TOKENT("yield",   TOK_RWORD_YIELD), // Reserved 2015+
+	// Rust++
+	TOKENT("auto", TOK_RWORD_AUTO)
 };
 
 static const sRWORD RWORDS_2018[] = {
@@ -253,6 +256,8 @@ static const sRWORD RWORDS_2018[] = {
     TOKENT("where",   TOK_RWORD_WHERE),
     TOKENT("while",   TOK_RWORD_WHILE),
     TOKENT("yield",   TOK_RWORD_YIELD), // Reserved 2015+
+	// Rust++
+	TOKENT("auto", TOK_RWORD_AUTO)
 };
 
 signed int Lexer::getSymbol()
@@ -1367,16 +1372,21 @@ Token Lex_FindReservedWord(const ::std::string& s, AST::Edition edition)
 {
     size_t len = 0;
     const sRWORD* RWORDS = nullptr;
+	const size_t number_of_rspp_keywords = 1;
     switch(edition)
     {
     case AST::Edition::Rust2015:
         len = LEN(RWORDS_2015);
+		if(!g_rust_plus_plus)
+			len -= number_of_rspp_keywords;
         RWORDS = RWORDS_2015;
         break;
     case AST::Edition::Rust2018:
     case AST::Edition::Rust2021:
     case AST::Edition::Rust2024:
         len = LEN(RWORDS_2018);
+		if(!g_rust_plus_plus)
+			len -= number_of_rspp_keywords;
         RWORDS = RWORDS_2018;
         break;
     }
@@ -1384,8 +1394,9 @@ Token Lex_FindReservedWord(const ::std::string& s, AST::Edition edition)
     for(size_t i = 0; i < len; i++)
     {
         const auto& e = RWORDS[i];
-        if( s < e.chars )
-            break;
+		// TODO: Putting rust++ keywords at the end of rword tables breaks lexicographical ordering
+        //if( s < e.chars )
+        //    break;
         if( s == e.chars )
         {
             assert(e.type > 0);

@@ -641,6 +641,8 @@ namespace {
             case TOK_RWORD_AWAIT:   m_pmi.send_rword("await");  break;
             case TOK_RWORD_DYN:     m_pmi.send_rword("dyn");    break;
             case TOK_RWORD_TRY:     m_pmi.send_rword("try");    break;
+			// Rust++
+			case TOK_RWORD_AUTO: m_pmi.send_rword("auto"); break;
             }
         }
         void visit_tokentree(const ::TokenTree& tt)

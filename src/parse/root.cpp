@@ -2203,7 +2203,7 @@ namespace {
             }
         // `unsafe auto trait`
         case TOK_IDENT:
-            if( TARGETVER_LEAST_1_29 && tok.ident().name == "auto" )
+            if( TARGETVER_LEAST_1_29 && tok.ident().name == "auto" ) // TODO: Probably have to fix this?
             {
                 GET_CHECK_TOK(tok, lex, TOK_RWORD_TRAIT);
                 GET_CHECK_TOK(tok, lex, TOK_IDENT);
@@ -2265,7 +2265,7 @@ namespace {
             item_data = ::AST::Item( Parse_Union(lex, meta_items) );
         }
         // `auto trait`
-        else if( TARGETVER_LEAST_1_29 && tok.ident().name == "auto" ) {
+        else if( TARGETVER_LEAST_1_29 && tok.ident().name == "auto" ) { // TODO: Probably have to fix this?
             GET_CHECK_TOK(tok, lex, TOK_RWORD_TRAIT);
             GET_CHECK_TOK(tok, lex, TOK_IDENT);
             item_name = tok.ident().name;

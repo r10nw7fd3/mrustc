@@ -31,6 +31,7 @@ ExprNodeP Parse_ExprBlockNode(TokenStream& lex, AST::ExprNode_Block::Type ty, Id
 ExprNodeP Parse_ExprBlockLine_Stmt(TokenStream& lex, bool& has_semicolon);
 //ExprNodeP Parse_Stmt(TokenStream& lex);   // common.hpp
 ExprNodeP Parse_Stmt_Let(TokenStream& lex);
+ExprNodeP Parse_Stmt_Auto(TokenStream& lex);
 ExprNodeP Parse_Expr0(TokenStream& lex);
 ExprNodeP Parse_Expr1_5(TokenStream& lex);  // Boolean OR
 ExprNodeP Parse_Expr3(TokenStream& lex);
@@ -309,6 +310,11 @@ ExprNodeP Parse_ExprBlockLine(TokenStream& lex, bool *add_silence)
             GET_CHECK_TOK(tok, lex, TOK_SEMICOLON);
             return ret;
 
+		case TOK_RWORD_AUTO:
+			ret = Parse_Stmt_Auto(lex);
+			GET_CHECK_TOK(tok, lex, TOK_SEMICOLON);
+			return ret;
+
         // Blocks that don't need semicolons
         // NOTE: If these are followed by a small set of tokens (`.` and `?`) then they are actually the start of an expression
         // HACK: Parse here, but if the next token is one of the set store in a TOK_INTERPOLATED_EXPR and invoke the statement parser
@@ -433,7 +439,7 @@ std::vector<AST::IfLet_Condition> Parse_IfLetChain(TokenStream& lex)
 		GET_CHECK_TOK(tok, lex, TOK_PAREN_OPEN);
 
     do {
-        if( lex.getTokenIf(TOK_RWORD_LET) ) {
+        if( lex.getTokenIf(TOK_RWORD_LET) || lex.getTokenIf(TOK_RWORD_AUTO) ) {
             lex.getTokenIf(TOK_PIPE);
             auto pat = Parse_Pattern(lex, AllowOrPattern::Yes);
             GET_CHECK_TOK(tok, lex, TOK_EQUAL);
@@ -674,6 +680,8 @@ ExprNodeP Parse_Stmt(TokenStream& lex)
     // Duplicated here for the :stmt pattern fragment.
     case TOK_RWORD_LET:
         return Parse_Stmt_Let(lex);
+	case TOK_RWORD_AUTO:
+		return Parse_Stmt_Auto(lex);
     case TOK_RWORD_YIELD:
         return Parse_FlowControl(lex, AST::ExprNode_Flow::YIELD);
     case TOK_RWORD_CONTINUE:
@@ -712,6 +720,22 @@ ExprNodeP Parse_Stmt_Let(TokenStream& lex)
     if( lex.getTokenIf(TOK_COLON) ) {
         type = Parse_Type(lex);
     }
+    ExprNodeP val;
+    ExprNodeP else_arm;
+    if( lex.getTokenIf(TOK_EQUAL) ) {
+        val = Parse_Expr0(lex);
+        if( lex.getTokenIf(TOK_RWORD_ELSE) ) {
+            else_arm = Parse_ExprBlockNode(lex);
+        }
+    }
+    return NEWNODE( AST::ExprNode_LetBinding, ::std::move(pat), mv$(type), ::std::move(val), ::std::move(else_arm) );
+}
+
+ExprNodeP Parse_Stmt_Auto(TokenStream& lex)
+{
+    Token   tok;
+    AST::Pattern pat = Parse_Pattern(lex, AllowOrPattern::Yes);   // irrefutable
+    TypeRef type { lex.point_span() };
     ExprNodeP val;
     ExprNodeP else_arm;
     if( lex.getTokenIf(TOK_EQUAL) ) {
