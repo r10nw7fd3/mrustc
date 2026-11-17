@@ -1980,6 +1980,15 @@ namespace {
 
     auto vis = Parse_Publicity(lex);
 
+	auto parse_auto_trait = [&] {
+		GET_CHECK_TOK(tok, lex, TOK_RWORD_TRAIT);
+		GET_CHECK_TOK(tok, lex, TOK_IDENT);
+		item_name = tok.ident().name;
+		auto tr = Parse_TraitDef(lex, meta_items, Parse_GenericParamsOpt(lex));
+		tr.set_is_marker();
+		item_data = ::AST::Item( ::std::move(tr) );
+	};
+
     switch( GET_TOK(tok, lex) )
     {
     case TOK_RWORD_USE:
@@ -2203,17 +2212,20 @@ namespace {
             }
         // `unsafe auto trait`
         case TOK_IDENT:
-            if( TARGETVER_LEAST_1_29 && tok.ident().name == "auto" ) // TODO: Probably have to fix this?
+            if( TARGETVER_LEAST_1_29 && tok.ident().name == "auto" )
             {
-                GET_CHECK_TOK(tok, lex, TOK_RWORD_TRAIT);
-                GET_CHECK_TOK(tok, lex, TOK_IDENT);
-                item_name = tok.ident().name;
-                auto tr = Parse_TraitDef(lex, meta_items, Parse_GenericParamsOpt(lex));
-                tr.set_is_unsafe();
-                tr.set_is_marker();
-                item_data = ::AST::Item( ::std::move(tr) );
+				parse_auto_trait();
+				item_data.as_Trait().set_is_unsafe();
                 break;
             }
+			else
+				throw ParseError::Unexpected(lex, tok, {TOK_RWORD_FN, TOK_RWORD_TRAIT, TOK_RWORD_IMPL});
+		case TOK_RWORD_AUTO: // Rust++
+			if(TARGETVER_LEAST_1_29) {
+				parse_auto_trait();
+				item_data.as_Trait().set_is_unsafe();
+                break;
+			}
             //goto default;
         default:
             throw ParseError::Unexpected(lex, tok, {TOK_RWORD_FN, TOK_RWORD_TRAIT, TOK_RWORD_IMPL});
@@ -2265,18 +2277,19 @@ namespace {
             item_data = ::AST::Item( Parse_Union(lex, meta_items) );
         }
         // `auto trait`
-        else if( TARGETVER_LEAST_1_29 && tok.ident().name == "auto" ) { // TODO: Probably have to fix this?
-            GET_CHECK_TOK(tok, lex, TOK_RWORD_TRAIT);
-            GET_CHECK_TOK(tok, lex, TOK_IDENT);
-            item_name = tok.ident().name;
-            auto tr = Parse_TraitDef(lex, meta_items, Parse_GenericParamsOpt(lex));
-            tr.set_is_marker();
-            item_data = ::AST::Item( ::std::move(tr) );
+        else if( TARGETVER_LEAST_1_29 && tok.ident().name == "auto" ) {
+			parse_auto_trait();
         }
         else {
             throw ParseError::Unexpected(lex, tok);
         }
         break;
+	case TOK_RWORD_AUTO: // Rust++
+		if(TARGETVER_LEAST_1_29)
+			parse_auto_trait();
+		else
+			throw ParseError::Unexpected(lex, tok);
+		break;
 
     // `impl`
     case TOK_RWORD_IMPL: {
